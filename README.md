@@ -4,7 +4,7 @@ FIXME: description
 
 ## Installation
 
-Download from http://example.com/FIXME.
+`git clone https://github.com/deem0n/clj-nats-streaming`
 
 ## Usage
 
@@ -30,6 +30,6 @@ FIXME: listing of options this app accepts.
 
 ## License
 
-Copyright © 2017 YASP Software Ltd.
+Copyright © 2017 Dmitry Dorofeev.
 
 Distributed under the MIT license
