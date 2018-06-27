@@ -2,17 +2,27 @@
   (:require [com.stuartsierra.component :as component]
             [clojure.tools.logging :as log])
   (:import [java.util.concurrent TimeUnit]
-           [io.nats.stan MessageHandler ConnectionFactory])
+           [io.nats.streaming MessageHandler StreamingConnectionFactory])
   (:gen-class))
+
+;should create connection with options
+(defn createConnection
+ [clusterName clientName options]
+ (let [cf (StreamingConnectionFactory. clusterName clientName)
+       opts (new io.nats.streaming.Options$Builder)] ; not used for now
+ (do 
+  ; https://stackoverflow.com/questions/6685916/how-to-iterate-over-map-keys-and-values
+  (doseq [[k v] options] 
+    (cond 
+      (= k :serverUrl) (.setNatsUrl cf v)))
+    (.createConnection cf))))
 
 
 (defrecord Connection [clusterName clientName options conn]
   component/Lifecycle
   (start [c]
-    (if-not conn
-      (let [cf (ConnectionFactory. clusterName clientName)]
-        (assoc c :conn (.createConnection cf)))
-      c))
+    (if-not conn (assoc c :conn (createConnection clusterName clientName options))
+    c))
   (stop [c]
     (try
       (if conn
@@ -30,31 +40,26 @@ c))))
 (map->Connection {:clusterName clusterName :clientName clientName :options options}))
 
 
-
+"creates instance of MessageHandler with custom onMessage method"
 (defn new-message-handler
-  [f]
+  [fns]
   (proxy [MessageHandler] []
-    (onMessage [#^io.nats.stan.Message msg] (f msg))))
+    (onMessage [#^io.nats.streaming.Message msg] (doseq [f fns] (f msg)))))
+
+    
 
 
-(defn subscribeM
+
+(defn subscribe
   "Subscribe to `subject` with MessageHandler instances constructed
   from `fns`, a sequence of functions taking one argument. Returns a
   subscription object that can be closed with `unsubscribe`."
   [connection subject & fns]
-  (->> fns
-       (map new-message-handler)
-       (into-array MessageHandler)
-       (.subscribe (:conn connection) subject)))
-
-(defn subscribe
-  "Simple version"
-  [connection subject & f]
-  (.subscribe (:conn connection)
-              subject
-              (new-message-handler (first f))
-              (-> (new io.nats.stan.SubscriptionOptions$Builder) (.deliverAllAvailable) (.build))
-              ))
+; subscribe(subject, new MessageHandler() {}, SubscriptionOptions)
+ (.subscribe (:conn connection)
+  subject
+  (new-message-handler fns)
+  (-> (new io.nats.streaming.SubscriptionOptions$Builder)  (.build))))
 
 
 (defn unsubscribe
@@ -85,6 +90,6 @@ c))))
   evaluated with a single `Message` argument for each matching
   message."
   [topic fns]
-(map->Subscription {:topic topic :fns fns}))
+  (map->Subscription {:topic topic :fns fns}))
 
 
