@@ -14,7 +14,8 @@
               (clj-nats-streaming.core/subscription
                "lvrz"
                [#(println "Subject:" (.getSubject %) "Payload:" (String. (.getData %)))
-                #(log/infof "To this I say \"foo\": %s" (String. (.getData %)))])
+                #(log/infof "To this I say \"foo\": %s" (String. (.getData %)))]
+               [])
               [:connection])
               ))
 
