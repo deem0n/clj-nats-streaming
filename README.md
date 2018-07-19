@@ -1,3 +1,5 @@
+[![Clojars Project](https://img.shields.io/clojars/v/clj-nats-streaming.svg)](https://clojars.org/clj-nats-streaming)
+
 # clj-nats-streaming
 
 Clojure wrapper around [NATS Streaming Java client](https://github.com/nats-io/java-nats-streaming)
